@@ -152,7 +152,10 @@ def calc_average(rtype, epi):
         minutes = tot_minutes % 60
 
         # avg interval in hours and minutes
-        avg_interval = f'{hours}:{minutes}'
+        if len(li_intervals) > 0:
+            avg_interval = f'{hours}:{minutes}'
+        else:
+            avg_interval = 'No data available.'
 
         return avg_interval
 
@@ -168,17 +171,14 @@ def welcome():
     longest_total = longest('*', '*')
     shortest_total = shortest('*', '*')
 
-    if total_average == '0:0':
-        total_average = 'No data available.'
-
     # output
     welcome_output = ''
     welcome_output += 'Welcome!\n'
     welcome_output += '\n'
     welcome_output += 'Quick stats:\n'
-    welcome_output += f'Average interval: {total_average}\n'
-    welcome_output += f'Longest interval: {longest_total}\n'
-    welcome_output += f'Shortest interval: {shortest_total}\n'
+    welcome_output += f'\tAverage interval: {total_average}\n'
+    welcome_output += f'\tLongest interval: {longest_total}\n'
+    welcome_output += f'\tShortest interval: {shortest_total}\n'
 
     print(welcome_output)
 
@@ -216,7 +216,7 @@ def add_reaction():
         hours = interval_split[0]
         minutes = interval_split[1]
 
-        success = f'Interval: {hours} hours {minutes} minutes\n'
+        success = f'\nInterval: {hours} hours {minutes} minutes\n'
         print(success)
 
     # error handling
