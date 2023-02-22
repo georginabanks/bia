@@ -8,6 +8,8 @@ import math
 db = sqlite3.connect('data/bia')
 cursor = db.cursor()
 
+cursor.execute("""DROP TABLE IF EXISTS intervals""")
+
 # create table for reaction data
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS intervals(
@@ -31,11 +33,21 @@ class Reaction:
         self.rtype = rtype
         self.epi = epi
 
+    # get dt1
+    def get_dt1(self):
+        return self.dt1
+
+    # get dt2
+    def get_dt2(self):
+        return self.dt2
+
     # calculate reaction interval
     def interval(self):
-        dt_format = '%Y-%m-%d %H:%M'
-        start = datetime.strptime(self.dt1, dt_format)
-        end = datetime.strptime(self.dt2, dt_format)
+
+        # start = datetime.strptime(self.get_dt1(), '%Y-%m-%d %H:%M')
+        # end = datetime.strptime(self.get_dt2(), '%Y-%m-%d %H:%M')
+        start = self.get_dt1()
+        end = self.get_dt2()
 
         total_seconds = (end - start).seconds
         total_minutes = math.floor(total_seconds / 60)
@@ -43,7 +55,7 @@ class Reaction:
         hours = math.floor(total_minutes / 60)
         minutes = total_minutes % 60
 
-        interval = f'{hours}:{minutes}'
+        interval = f'{hours:0>2d}:{minutes:0>2d}'
 
         return interval
 
@@ -204,7 +216,7 @@ def add_reaction():
         hours = interval_split[0]
         minutes = interval_split[1]
 
-        success = f'Interval: {hours} hours {minutes} minutes'
+        success = f'Interval: {hours} hours {minutes} minutes\n'
         print(success)
 
     # error handling
@@ -287,15 +299,19 @@ def edit_reaction():
 # view reactions
 def view_reactions():
     try:
-        # insert into db
+        # read db
         cursor.execute("""
             SELECT *
             FROM intervals(dt1, dt2, type, epi)""")
         li_reactions = cursor.fetchall()
 
-        # print reactions
-        for row in li_reactions:
-            print(Reaction(row))
+        # error handling empty list
+        if len(li_reactions) > 0:
+            # print reactions
+            for row in li_reactions:
+                print(Reaction(row))
+        else:
+            print('No data available.')
 
     except Exception as e:
         raise e
@@ -309,8 +325,8 @@ def view_averages():
 
     # calculate averages
     avg_total = calc_average('*', '*')
-    avg_anaphylaxis = calc_average('anaphylaxis', '*')
-    avg_asthma = calc_average('asthma', '*')
+    avg_anaphylaxis = calc_average('Anaphylaxis', '*')
+    avg_asthma = calc_average('Asthma', '*')
     avg_epi = calc_average('*', 'Yes')
     avg_no_epi = calc_average('*', 'No')
 
@@ -334,14 +350,14 @@ def view_stats():
     shortest_total = shortest('*', '*')
 
     # anapylaxis
-    avg_anaphylaxis = calc_average('anaphylaxis', '*')
-    longest_anaphylaxis = longest('anaphylaxis', '*')
-    shortest_anaphylaxis = shortest('anaphylaxis', '*')
+    avg_anaphylaxis = calc_average('Anaphylaxis', '*')
+    longest_anaphylaxis = longest('Anaphylaxis', '*')
+    shortest_anaphylaxis = shortest('Anaphylaxis', '*')
 
     # asthma
-    avg_asthma = calc_average('asthma', '*')
-    longest_asthma = longest('asthma', '*')
-    shortest_asthma = shortest('asthma', '*')
+    avg_asthma = calc_average('Asthma', '*')
+    longest_asthma = longest('Asthma', '*')
+    shortest_asthma = shortest('Asthma', '*')
 
     # with adrenaline
     avg_epi = calc_average('*', 'Y')
@@ -395,22 +411,27 @@ while True:
     # add new reaction
     if menu == '1':
         add_reaction()
+        continue
 
     # edit reaction
     if menu == '2':
         edit_reaction()
+        continue
 
     # view reactions
     if menu == '3':
         view_reactions()
+        continue
 
     # view averages
     if menu == '4':
         view_averages()
+        continue
 
     # view stats
     if menu == '5':
         view_stats()
+        continue
 
     # exit
     if menu == '0':
@@ -418,5 +439,5 @@ while True:
 
     # error handling
     else:
-        print('Something went wrong.\nPlease try again.')
+        print('Something went wrong.\nPlease try again.\n')
         continue
