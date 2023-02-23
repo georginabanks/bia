@@ -164,7 +164,7 @@ def average_total():
         tot_minutes = 0
         reactions = 0
         for i in li_intervals:
-            m = datetime.strptime(i, '%Y-%m-%d %H:%M')
+            m = datetime.strptime(i, '%H:%M')
             tot_minutes += m
             reactions += 1
 
@@ -259,7 +259,7 @@ def average_type(rtype):
         tot_minutes = 0
         reactions = 0
         for i in li_intervals:
-            m = datetime.strptime(i, '%Y-%m-%d %H:%M')
+            m = datetime.strptime(i, '%H:%M')
             tot_minutes += m
             reactions += 1
 
@@ -354,7 +354,7 @@ def average_epi(epi):
         tot_minutes = 0
         reactions = 0
         for i in li_intervals:
-            m = datetime.strptime(i, '%Y-%m-%d %H:%M')
+            m = datetime.strptime(i, '%H:%M')
             tot_minutes += m
             reactions += 1
 
