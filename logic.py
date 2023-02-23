@@ -92,8 +92,10 @@ class Reaction:
 
 # interval as hours and minutes string
 def str_interval(i):
-    interval = i[0]
-    interval_split = interval.split(':')
+    # convert datetime to %H:%M
+    str_i = str(i)
+    space_split = str_i.split(' ')
+    interval_split = space_split[1].split(':')
     hours = interval_split[0]
     minutes = interval_split[1]
 
@@ -108,7 +110,12 @@ def longest_total():
         cursor.execute("""
             SELECT interval
             FROM intervals""")
-        li_intervals = cursor.fetchall()
+        li_ints = cursor.fetchall()
+
+        li_intervals = []
+        for i in li_ints:
+            dt = datetime.strptime(i[0], '%H:%M')
+            li_intervals.append(dt)
 
         # error handling for empty list
         if len(li_intervals) > 0:
@@ -131,7 +138,12 @@ def shortest_total():
         cursor.execute("""
             SELECT interval
             FROM intervals""")
-        li_intervals = cursor.fetchall()
+        li_ints = cursor.fetchall()
+
+        li_intervals = []
+        for i in li_ints:
+            dt = datetime.strptime(i[0], '%H:%M')
+            li_intervals.append(dt)
 
         # error handling for empty list
         if len(li_intervals) > 0:
