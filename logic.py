@@ -8,8 +8,6 @@ import math
 db = sqlite3.connect('data/bia')
 cursor = db.cursor()
 
-#cursor.execute("""DROP TABLE IF EXISTS intervals""")
-
 # create table for reaction data
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS intervals(
@@ -63,7 +61,7 @@ class Reaction:
         hours = math.floor(total_minutes / 60)
         minutes = total_minutes % 60
 
-        interval = f'{hours:0>2d}:{minutes:0>2d}'
+        interval = f'{hours}:{minutes:0>2d}'
 
         return interval
 
@@ -85,7 +83,7 @@ class Reaction:
         output = ''
         output += f'First reaction: {dt1}\n'
         output += f'Second reaction: {dt2}\n'
-        output += f'Interval: {hours} hours {minutes} minutes\n'
+        output += f'Interval: {hours} hours {minutes:0>2d} minutes\n'
         output += f'Type: {self.rtype}\n'
         output += f'Adrenaline: {self.epi}\n'
 
@@ -94,7 +92,8 @@ class Reaction:
 
 # interval as hours and minutes string
 def str_interval(i):
-    interval_split = i.split(':')
+    interval = i[0]
+    interval_split = interval.split(':')
     hours = interval_split[0]
     minutes = interval_split[1]
 
@@ -164,8 +163,12 @@ def average_total():
         tot_minutes = 0
         reactions = 0
         for i in li_intervals:
-            m = datetime.strptime(i, '%H:%M')
-            tot_minutes += m
+            i_split = i.split(':')
+            h = int(i_split[0])
+            m = int(i_split[1])
+            mins = (h * 60) + m
+
+            tot_minutes += mins
             reactions += 1
 
         # average interval in minutes
@@ -180,7 +183,7 @@ def average_total():
 
         # avg interval in hours and minutes
         if len(li_intervals) > 0:
-            avg_interval = f'{hours} hours {minutes} minutes'
+            avg_interval = f'{hours} hours {minutes:0>2d} minutes'
         else:
             avg_interval = 'No data available.'
 
@@ -259,8 +262,12 @@ def average_type(rtype):
         tot_minutes = 0
         reactions = 0
         for i in li_intervals:
-            m = datetime.strptime(i, '%H:%M')
-            tot_minutes += m
+            i_split = i.split(':')
+            h = int(i_split[0])
+            m = int(i_split[1])
+            mins = int((h * 60) + m)
+
+            tot_minutes += mins
             reactions += 1
 
         # average interval in minutes
@@ -275,7 +282,7 @@ def average_type(rtype):
 
         # avg interval in hours and minutes
         if len(li_intervals) > 0:
-            avg_interval = f'{hours} hours {minutes} minutes'
+            avg_interval = f'{hours} hours {minutes:0>2d} minutes'
         else:
             avg_interval = 'No data available.'
 
@@ -354,8 +361,12 @@ def average_epi(epi):
         tot_minutes = 0
         reactions = 0
         for i in li_intervals:
-            m = datetime.strptime(i, '%H:%M')
-            tot_minutes += m
+            i_split = i.split(':')
+            h = int(i_split[0])
+            m = int(i_split[1])
+            mins = int((h * 60) + m)
+
+            tot_minutes += mins
             reactions += 1
 
         # average interval in minutes
@@ -370,7 +381,7 @@ def average_epi(epi):
 
         # avg interval in hours and minutes
         if len(li_intervals) > 0:
-            avg_interval = f'{hours} hours {minutes} minutes'
+            avg_interval = f'{hours} hours {minutes:0>2d} minutes'
         else:
             avg_interval = 'No data available.'
 
@@ -433,7 +444,7 @@ def add_reaction():
         hours = interval_split[0]
         minutes = interval_split[1]
 
-        success = f'\nInterval: {hours} hours {minutes} minutes\n'
+        success = f'\nInterval: {hours} hours {minutes:0>2d} minutes\n'
         print(success)
 
     # error handling
