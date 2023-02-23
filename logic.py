@@ -8,7 +8,7 @@ import math
 db = sqlite3.connect('data/bia')
 cursor = db.cursor()
 
-cursor.execute("""DROP TABLE IF EXISTS intervals""")
+#cursor.execute("""DROP TABLE IF EXISTS intervals""")
 
 # create table for reaction data
 cursor.execute("""
@@ -44,10 +44,18 @@ class Reaction:
     # calculate reaction interval
     def interval(self):
 
-        # start = datetime.strptime(self.get_dt1(), '%Y-%m-%d %H:%M')
-        # end = datetime.strptime(self.get_dt2(), '%Y-%m-%d %H:%M')
         start = self.get_dt1()
         end = self.get_dt2()
+
+        # convert to datetime
+        if type(start) == str:
+
+            if len(start) > 16:
+                start = start[:-3]
+                end = end[:-3]
+
+            start = datetime.strptime(start, '%Y-%m-%d %H:%M')
+            end = datetime.strptime(end, '%Y-%m-%d %H:%M')
 
         total_seconds = (end - start).seconds
         total_minutes = math.floor(total_seconds / 60)
@@ -59,79 +67,98 @@ class Reaction:
 
         return interval
 
-    # print string
+    # string
     def __str__(self):
         interval = self.interval()
+        interval_split = interval.split(':')
+        hours = interval_split[0]
+        minutes = interval_split[1]
+
+        dt1 = self.get_dt1()
+        dt2 = self.get_dt2()
+
+        # remove seconds parameter from datetime
+        if len(dt1) > 16:
+            dt1 = dt1[:-3]
+            dt2 = dt2[:-3]
 
         output = ''
-        output += f'First reaction: {self.dt1}\n'
-        output += f'Second reaction: {self.dt2}\n'
-        output += f'Interval: {interval}\n'
+        output += f'First reaction: {dt1}\n'
+        output += f'Second reaction: {dt2}\n'
+        output += f'Interval: {hours} hours {minutes} minutes\n'
         output += f'Type: {self.rtype}\n'
         output += f'Adrenaline: {self.epi}\n'
 
-        print(output)
+        return output
 
 
-# calculate longest interval
-def longest(rtype, epi):
+# interval as hours and minutes string
+def str_interval(i):
+    interval_split = i.split(':')
+    hours = interval_split[0]
+    minutes = interval_split[1]
+
+    return f'{hours} hours {minutes} minutes'
+
+
+# calculate total longest interval
+def longest_total():
 
     try:
         # read db
         cursor.execute("""
             SELECT interval
-            FROM intervals
-            WHERE type=? AND epi=?""",
-            [rtype, epi])
+            FROM intervals""")
         li_intervals = cursor.fetchall()
 
         # error handling for empty list
         if len(li_intervals) > 0:
             i_longest = max(li_intervals)
+            output = str_interval(i_longest)
         else:
-            i_longest = 'No data available.'
+            output = 'No data available.'
 
-        return i_longest
+        return output
 
     except Exception as e:
         raise e
 
 
-# calculate shortest interval
-def shortest(rtype, epi):
+# calculate total shortest interval
+def shortest_total():
 
     try:
         # read db
         cursor.execute("""
             SELECT interval
-            FROM intervals
-            WHERE type=? AND epi=?""",
-            [rtype, epi])
+            FROM intervals""")
         li_intervals = cursor.fetchall()
 
         # error handling for empty list
         if len(li_intervals) > 0:
             i_shortest = min(li_intervals)
+            output = str_interval(i_shortest)
         else:
-            i_shortest = 'No data available.'
+            output = 'No data available.'
 
-        return i_shortest
+        return output
 
     except Exception as e:
         raise e
 
 
-# calculate average
-def calc_average(rtype, epi):
-
+# calculate total average
+def average_total():
     try:
         # read db
         cursor.execute("""
             SELECT interval
-            FROM intervals
-            WHERE type=? AND epi=?""",
-            [rtype, epi])
-        li_intervals = cursor.fetchall()
+            FROM intervals""")
+        li_ints = cursor.fetchall()
+
+        li_intervals = []
+        for i in li_ints:
+            li_intervals.append(f'{i[0]}')
 
         # calculate total time in minutes and no. of reactions
         tot_minutes = 0
@@ -153,7 +180,197 @@ def calc_average(rtype, epi):
 
         # avg interval in hours and minutes
         if len(li_intervals) > 0:
-            avg_interval = f'{hours}:{minutes}'
+            avg_interval = f'{hours} hours {minutes} minutes'
+        else:
+            avg_interval = 'No data available.'
+
+        return avg_interval
+
+    except Exception as e:
+        raise e
+
+
+# calculate longest interval by type of reaction
+def longest_type(rtype):
+
+    try:
+        # read db
+        cursor.execute("""
+            SELECT interval
+            FROM intervals
+            WHERE type=?""",
+            [rtype])
+        li_intervals = cursor.fetchall()
+
+        # error handling for empty list
+        if len(li_intervals) > 0:
+            i_longest = max(li_intervals)
+            output = str_interval(i_longest)
+        else:
+            output = 'No data available.'
+
+        return output
+
+    except Exception as e:
+        raise e
+
+
+# calculate shortest interval by reaction type
+def shortest_type(rtype):
+
+    try:
+        # read db
+        cursor.execute("""
+            SELECT interval
+            FROM intervals
+            WHERE type=?""",
+            [rtype])
+        li_intervals = cursor.fetchall()
+
+        # error handling for empty list
+        if len(li_intervals) > 0:
+            i_shortest = min(li_intervals)
+            output = str_interval(i_shortest)
+        else:
+            output = 'No data available.'
+
+        return output
+
+    except Exception as e:
+        raise e
+
+
+# calculate average for anaphylaxis/asthma
+def average_type(rtype):
+    try:
+        # read db
+        cursor.execute("""
+            SELECT interval
+            FROM intervals
+            WHERE type=?""",
+            [rtype])
+        li_ints = cursor.fetchall()
+
+        li_intervals = []
+        for i in li_ints:
+            li_intervals.append(f'{i[0]}')
+
+        # calculate total time in minutes and no. of reactions
+        tot_minutes = 0
+        reactions = 0
+        for i in li_intervals:
+            m = datetime.strptime(i, '%Y-%m-%d %H:%M')
+            tot_minutes += m
+            reactions += 1
+
+        # average interval in minutes
+        try:
+            avg_minutes = tot_minutes / reactions
+
+        except ZeroDivisionError:
+            avg_minutes = 0
+
+        hours = math.floor(avg_minutes / 60)
+        minutes = tot_minutes % 60
+
+        # avg interval in hours and minutes
+        if len(li_intervals) > 0:
+            avg_interval = f'{hours} hours {minutes} minutes'
+        else:
+            avg_interval = 'No data available.'
+
+        return avg_interval
+
+    except Exception as e:
+        raise e
+
+
+# calculate longest interval by adrenaline Y/N
+def longest_epi(epi):
+
+    try:
+        # read db
+        cursor.execute("""
+            SELECT interval
+            FROM intervals
+            WHERE epi=?""",
+            [epi])
+        li_intervals = cursor.fetchall()
+
+        # error handling for empty list
+        if len(li_intervals) > 0:
+            i_longest = max(li_intervals)
+            output = str_interval(i_longest)
+        else:
+            output = 'No data available.'
+
+        return output
+
+    except Exception as e:
+        raise e
+
+
+# calculate shortest interval by adrenaline Y/N
+def shortest_epi(epi):
+
+    try:
+        # read db
+        cursor.execute("""
+            SELECT interval
+            FROM intervals
+            WHERE epi=?""",
+            [epi])
+        li_intervals = cursor.fetchall()
+
+        # error handling for empty list
+        if len(li_intervals) > 0:
+            i_shortest = min(li_intervals)
+            output = str_interval(i_shortest)
+        else:
+            output = 'No data available.'
+
+        return output
+
+    except Exception as e:
+        raise e
+
+
+# calculate average for reactions treated with/without adrenaline
+def average_epi(epi):
+    try:
+        # read db
+        cursor.execute("""
+            SELECT interval
+            FROM intervals
+            WHERE epi=?""",
+            [epi])
+        li_ints = cursor.fetchall()
+
+        li_intervals = []
+        for i in li_ints:
+            li_intervals.append(f'{i[0]}')
+
+        # calculate total time in minutes and no. of reactions
+        tot_minutes = 0
+        reactions = 0
+        for i in li_intervals:
+            m = datetime.strptime(i, '%Y-%m-%d %H:%M')
+            tot_minutes += m
+            reactions += 1
+
+        # average interval in minutes
+        try:
+            avg_minutes = tot_minutes / reactions
+
+        except ZeroDivisionError:
+            avg_minutes = 0
+
+        hours = math.floor(avg_minutes / 60)
+        minutes = tot_minutes % 60
+
+        # avg interval in hours and minutes
+        if len(li_intervals) > 0:
+            avg_interval = f'{hours} hours {minutes} minutes'
         else:
             avg_interval = 'No data available.'
 
@@ -167,9 +384,9 @@ def calc_average(rtype, epi):
 def welcome():
 
     # stats
-    total_average = calc_average('*', '*')
-    longest_total = longest('*', '*')
-    shortest_total = shortest('*', '*')
+    total_average = average_total()
+    total_longest = longest_total()
+    total_shortest = shortest_total()
 
     # output
     welcome_output = ''
@@ -177,8 +394,8 @@ def welcome():
     welcome_output += '\n'
     welcome_output += 'Quick stats:\n'
     welcome_output += f'\tAverage interval: {total_average}\n'
-    welcome_output += f'\tLongest interval: {longest_total}\n'
-    welcome_output += f'\tShortest interval: {shortest_total}\n'
+    welcome_output += f'\tLongest interval: {total_longest}\n'
+    welcome_output += f'\tShortest interval: {total_shortest}\n'
 
     print(welcome_output)
 
@@ -301,34 +518,31 @@ def view_reactions():
     try:
         # read db
         cursor.execute("""
-            SELECT *
-            FROM intervals(dt1, dt2, type, epi)""")
+            SELECT dt1, dt2, type, epi
+            FROM intervals""")
         li_reactions = cursor.fetchall()
 
         # error handling empty list
         if len(li_reactions) > 0:
             # print reactions
             for row in li_reactions:
-                print(Reaction(row))
+                print(Reaction(row[0], row[1], row[2], row[3]))
         else:
-            print('No data available.')
+            print('No data available.\n')
 
     except Exception as e:
         raise e
-
-    finally:
-        return
 
 
 # view averages
 def view_averages():
 
     # calculate averages
-    avg_total = calc_average('*', '*')
-    avg_anaphylaxis = calc_average('Anaphylaxis', '*')
-    avg_asthma = calc_average('Asthma', '*')
-    avg_epi = calc_average('*', 'Yes')
-    avg_no_epi = calc_average('*', 'No')
+    avg_total = average_total()
+    avg_anaphylaxis = average_type('Anaphylaxis')
+    avg_asthma = average_type('Asthma')
+    avg_epi = average_epi('Yes')
+    avg_no_epi = average_epi('No')
 
     # output
     avg_output = ''
@@ -345,51 +559,51 @@ def view_averages():
 def view_stats():
 
     # total
-    avg_total = calc_average('*', '*')
-    longest_total = longest('*', '*')
-    shortest_total = shortest('*', '*')
+    avg_total = average_total()
+    long_total = longest_total()
+    short_total = shortest_total()
 
     # anapylaxis
-    avg_anaphylaxis = calc_average('Anaphylaxis', '*')
-    longest_anaphylaxis = longest('Anaphylaxis', '*')
-    shortest_anaphylaxis = shortest('Anaphylaxis', '*')
+    avg_anaphylaxis = average_type('Anaphylaxis')
+    long_anaphylaxis = longest_type('Anaphylaxis')
+    short_anaphylaxis = shortest_type('Anaphylaxis')
 
     # asthma
-    avg_asthma = calc_average('Asthma', '*')
-    longest_asthma = longest('Asthma', '*')
-    shortest_asthma = shortest('Asthma', '*')
+    avg_asthma = average_type('Asthma')
+    long_asthma = longest_type('Asthma')
+    short_asthma = shortest_type('Asthma')
 
     # with adrenaline
-    avg_epi = calc_average('*', 'Y')
-    longest_epi = longest('*', 'Y')
-    shortest_epi = shortest('*', 'Y')
+    avg_epi = average_epi('Yes')
+    long_epi = longest_epi('Yes')
+    short_epi = shortest_type('Yes')
 
     # without adrenaline
-    avg_no_epi = calc_average('*', 'N')
-    longest_no_epi = longest('*', 'N')
-    shortest_no_epi = shortest('*', 'N')
+    avg_no_epi = average_epi('No')
+    long_no_epi = longest_epi('No')
+    short_no_epi = shortest_epi('No')
 
     # output
     stats_output = ''
     stats_output += f'Average: {avg_total}\n'
-    stats_output += f'Longest: {longest_total}\n'
-    stats_output += f'Shortest: {shortest_total}\n'
+    stats_output += f'Longest: {long_total}\n'
+    stats_output += f'Shortest: {short_total}\n'
     stats_output += '\n'
     stats_output += f'Average anaphylaxis: {avg_anaphylaxis}\n'
-    stats_output += f'Longest anaphylaxis: {longest_anaphylaxis}\n'
-    stats_output += f'Shortest anaphylaxis: {shortest_anaphylaxis}\n'
+    stats_output += f'Longest anaphylaxis: {long_anaphylaxis}\n'
+    stats_output += f'Shortest anaphylaxis: {short_anaphylaxis}\n'
     stats_output += '\n'
     stats_output += f'Average asthma: {avg_asthma}\n'
-    stats_output += f'Longest asthma: {longest_asthma}\n'
-    stats_output += f'Shortest asthma: {shortest_asthma}\n'
+    stats_output += f'Longest asthma: {long_asthma}\n'
+    stats_output += f'Shortest asthma: {short_asthma}\n'
     stats_output += '\n'
     stats_output += f'Average with adrenaline: {avg_epi}\n'
-    stats_output += f'Longest with adrenaline: {longest_epi}\n'
-    stats_output += f'Shortest with adrenaline: {shortest_epi}\n'
+    stats_output += f'Longest with adrenaline: {long_epi}\n'
+    stats_output += f'Shortest with adrenaline: {short_epi}\n'
     stats_output += '\n'
     stats_output += f'Average without adrenaline: {avg_no_epi}\n'
-    stats_output += f'Longest without adrenaline: {longest_no_epi}\n'
-    stats_output += f'Shortest without adrenaline: {shortest_no_epi}\n'
+    stats_output += f'Longest without adrenaline: {long_no_epi}\n'
+    stats_output += f'Shortest without adrenaline: {short_no_epi}\n'
 
     print(stats_output)
 
