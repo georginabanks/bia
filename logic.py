@@ -83,7 +83,7 @@ class Reaction:
         output = ''
         output += f'First reaction: {dt1}\n'
         output += f'Second reaction: {dt2}\n'
-        output += f'Interval: {hours} hours {minutes:0>2d} minutes\n'
+        output += f'Interval: {hours} hours {minutes} minutes\n'
         output += f'Type: {self.rtype}\n'
         output += f'Adrenaline: {self.epi}\n'
 
@@ -444,7 +444,7 @@ def add_reaction():
         hours = interval_split[0]
         minutes = interval_split[1]
 
-        success = f'\nInterval: {hours} hours {minutes:0>2d} minutes\n'
+        success = f'\nInterval: {hours} hours {minutes} minutes\n'
         print(success)
 
     # error handling
@@ -530,7 +530,8 @@ def view_reactions():
         # read db
         cursor.execute("""
             SELECT dt1, dt2, type, epi
-            FROM intervals""")
+            FROM intervals
+            ORDER BY dt1""")
         li_reactions = cursor.fetchall()
 
         # error handling empty list
